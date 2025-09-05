@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mentor Bot | Login & Profile</title>
+    <link rel="stylesheet" href="profile.css" />
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f6f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+            position: relative;
+            width: 700px;
+            max-width: 100%;
+            min-height: 500px;
+            overflow: hidden;
+        }
+
+        /* Forms */
+        form {
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            padding: 50px;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: all 0.6s ease-in-out;
+        }
+
+        input {
+            background: #eee;
+            border: none;
+            padding: 12px 15px;
+            margin: 8px 0;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        button {
+            border-radius: 20px;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 12px 45px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: transform 80ms ease-in;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .toggle {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #007bff;
+            cursor: pointer;
+        }
+
+        /* Panels */
+        #signinForm, #signupForm, #profileForm {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 50%;
+        }
+
+        #signupForm {
+            left: 0;
+        }
+
+        #signinForm {
+            left: 0;
+            transform: translateX(100%);
+        }
+
+        #profileForm {
+            left: 0;
+            width: 100%;
+            padding: 30px 50px;
+            display: none;
+        }
+
+        .container.right-panel-active #signupForm {
+            transform: translateX(100%);
+        }
+
+        .container.right-panel-active #signinForm {
+            transform: translateX(0%);
+        }
+
+        h2 {
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        /* Subject tags */
+        #subject-list span {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 4px 8px;
+            margin: 4px 4px 0 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="container">
+
+        <!-- Sign Up Form -->
+        <form id="signupForm">
+            <h2>Create Account</h2>
+            <input id="signupName" placeholder="Full Name" required />
+            <input id="signupEmail" type="email" placeholder="Email" required />
+            <input id="signupPassword" type="password" placeholder="Password" required />
+            <button type="submit">Sign Up</button>
+            <div class="toggle" id="showLogin">Already have an account? Login</div>
+        </form>
+
+        <!-- Sign In Form -->
+        <form id="signinForm">
+            <h2>Sign In</h2>
+            <input id="signinEmail" type="email" placeholder="Email" required />
+            <input id="signinPassword" type="password" placeholder="Password" required />
+            <button type="submit">Login</button>
+            <div class="toggle" id="showSignup">Don't have an account? Sign Up</div>
+        </form>
+
+        <!-- Profile Form -->
+        <form id="profileForm">
+            <h2>🎓 Student Profile</h2>
+            <input id="name" placeholder="Full Name" required />
+            <input id="email" type="email" placeholder="Email" required />
+            <input id="examGoal" placeholder="Your Exam/Goal" />
+            <input id="futureAim" placeholder="Future Aim" />
+
+            <label>Subjects to Focus On</label>
+            <div>
+                <input id="new-subject" placeholder="Enter a subject">
+                <button type="button" id="add-subject-btn">Add</button>
+            </div>
+            <div id="subject-list"></div>
+
+            <label>Target Completion Date</label>
+            <input id="targetDate" type="date" />
+
+            <button type="submit">Save Profile</button>
+        </form>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsdv2DcDa_u-kNBAXuq3TXp9nfdLy-chs",
+            authDomain: "margadarshi-85118.firebaseapp.com",
+            projectId: "margadarshi-85118",
+            storageBucket: "margadarshi-85118.firebasestorage.app",
+            messagingSenderId: "868205365403",
+            appId: "1:868205365403:web:6c412eb371a1388f68de3e"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Toggle login/signup
+        document.getElementById("showLogin").onclick = () => {
+            document.getElementById("container").classList.add("right-panel-active");
+        };
+        document.getElementById("showSignup").onclick = () => {
+            document.getElementById("container").classList.remove("right-panel-active");
+        };
+
+        // Add subjects dynamically
+        document.getElementById("add-subject-btn").addEventListener("click", () => {
+            const subject = document.getElementById("new-subject").value.trim();
+            if (subject) {
+                const span = document.createElement("span");
+                span.textContent = subject;
+                document.getElementById("subject-list").appendChild(span);
+                document.getElementById("new-subject").value = "";
+            }
+        });
+
+        // Sign up
+        document.getElementById("signupForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("signupName").value.trim();
+            const email = document.getElementById("signupEmail").value.trim();
+            const password = document.getElementById("signupPassword").value.trim();
+
+            if (!name || !email || !password) { alert("Fill all fields"); return; }
+            if (password.length < 6) { alert("Password min 6 chars"); return; }
+
+            try {
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCred.user;
+                await db.collection("users").doc(user.uid).set({ name, email });
+                showProfileForm(user);
+            } catch (err) {
+                alert(err.message);
+                console.error(err);
+            }
+        });
+
+        // Login
+        document.getElementById("signinForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("signinEmail").value.trim();
+            const password = document.getElementById("signinPassword").value.trim();
+
+            if (!email || !password) { alert("Fill all fields"); return; }
+
+            try {
+                const userCred = await auth.signInWithEmailAndPassword(email, password);
+                showProfileForm(userCred.user);
+            } catch (err) {
+                alert(err.message);
+                console.error(err);
+            }
+        });
+
+        // Show profile form
+        function showProfileForm(user) {
+            document.getElementById("signupForm").style.display = "none";
+            document.getElementById("signinForm").style.display = "none";
+            document.getElementById("profileForm").style.display = "block";
+
+            // Load existing profile
+            db.collection("users").doc(user.uid).get().then(docSnap => {
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    document.getElementById("name").value = data.name || "";
+                    document.getElementById("email").value = data.email || "";
+                    document.getElementById("examGoal").value = data.examGoal || "";
+                    document.getElementById("futureAim").value = data.futureAim || "";
+                    document.getElementById("targetDate").value = data.targetDate || "";
+                    if (data.subjects) {
+                        const list = document.getElementById("subject-list");
+                        data.subjects.forEach(s => {
+                            const span = document.createElement("span");
+                            span.textContent = s;
+                            list.appendChild(span);
+                        });
+                    }
+                }
+            });
+        }
+
+        // Save profile
+        document.getElementById("profileForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            if (!user) { alert("Not logged in"); return; }
+
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const examGoal = document.getElementById("examGoal").value;
+            const futureAim = document.getElementById("futureAim").value;
+            const targetDate = document.getElementById("targetDate").value;
+
+            const subjects = [];
+            document.getElementById("subject-list").querySelectorAll("span").forEach(span => subjects.push(span.textContent));
+
+            try {
+                await db.collection("users").doc(user.uid).set({
+                    name, email, examGoal, futureAim, targetDate, subjects
+                }, { merge: true });
+                alert("✅ Profile saved successfully!");
+            } catch (err) {
+                console.error(err);
+                alert("❌ Error saving profile");
+            }
+        });
+    </script>
+</body>
+
+</html>

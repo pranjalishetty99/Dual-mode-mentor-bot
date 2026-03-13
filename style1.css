@@ -1,0 +1,70 @@
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: #f4f4f9;
+  color: #333;
+  margin: 0;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: #4a6cf7;
+  color: white;
+}
+
+header h1 {
+  margin: 0;
+}
+
+.login-btn {
+  padding: 8px 16px;
+  background: white;
+  color: #4a6cf7;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-btn:hover {
+  background: #e3e3ff;
+}
+
+/* Chat */
+.user-msg { text-align: right; background: #d1ffd6; margin: 5px; padding: 5px; border-radius: 5px;}
+.bot-msg { text-align: left; background: #f0f0f0; margin: 5px; padding: 5px; border-radius: 5px;}
+
+/* Cards on homepage */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 30px;
+  margin: 50px;
+  padding: 0 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ccc;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  text-align: center;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 15px #aaa;
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  color: #4a6cf7;
+}
+
+/* Quiz & other elements */
+.quiz-container { padding: 20px; max-width: 600px; margin: auto; }

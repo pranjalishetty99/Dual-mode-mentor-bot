@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Bookmarks | Margadarshi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --primary: #5661fa;
+      --secondary: #1a1f4b;
+      --accent: #ff4d4f;
+      --light-bg: #f4f8ff;
+      --light-hover: #e9ecff;
+      --card-shadow: 0 4px 12px rgba(86,97,250,0.08);
+      --success: #37c871;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--light-bg);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      color: var(--secondary);
+    }
+
+    h1 {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 2rem;
+      font-size: 2.3rem;
+      text-align: center;
+    }
+
+    #bookmarkList {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+      max-width: 800px;
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      background: white;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    #bookmarkList li {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--light-hover);
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #26317c;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      transition: background-color 0.18s, transform 0.12s;
+      padding-right: 170px; /* room for action buttons */
+    }
+
+    #bookmarkList li:hover {
+      background-color: #fcfdff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(34,41,99,0.04);
+    }
+
+    #bookmarkList li:last-child {
+      border-bottom: none;
+    }
+
+    .bookmark-text {
+      flex-grow: 1;
+      margin: 0;
+      white-space: pre-wrap;
+      text-align: left;
+      width: 100%;
+      max-height: 4.5em;
+      overflow: hidden;
+      position: relative;
+      transition: max-height 0.38s ease;
+      color: var(--secondary);
+      font-size: 1rem;
+      padding-right: 8px;
+    }
+
+    .bookmark-text.expanded {
+      max-height: 1000px;
+      transition: max-height 0.6s ease;
+    }
+
+    .expand-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+      align-self: flex-start;
+      transition: color 0.2s;
+    }
+
+    .expand-btn:hover {
+      color: #3240c1;
+      text-decoration: underline;
+    }
+
+    .bookmark-meta {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 12px;
+      color: #8690ff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    button.action-btn {
+      border: none;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    button.copy-btn {
+      right: 100px;
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 6px 18px rgba(86,97,250,0.2);
+    }
+
+    button.copy-btn:hover {
+      transform: translateY(-50%) scale(1.03);
+      box-shadow: 0 8px 22px rgba(86,97,250,0.25);
+    }
+
+    button.delete-btn {
+      right: 20px;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(255,77,79,0.14);
+    }
+
+    button.delete-btn:hover {
+      transform: translateY(-50%) scale(1.03);
+      box-shadow: 0 8px 22px rgba(255,77,79,0.18);
+      opacity: 1;
+    }
+
+    button#clearAllBtn {
+      align-self: center;
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: 30px;
+      color: white;
+      background: var(--accent);
+      box-shadow: 0 6px 14px rgba(255, 77, 79, 0.3);
+      margin-top: 20px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button#clearAllBtn:hover {
+      background: #d9363e;
+      box-shadow: 0 6px 16px rgba(255, 77, 79, 0.45);
+    }
+
+    .empty-message,
+    .loading-message {
+      font-size: 1.15rem;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 40px;
+      text-align: center;
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+  <h1>📚 My Bookmarked AI Messages</h1>
+  <ul id="bookmarkList">
+    <li class="loading-message">Loading bookmarks...</li>
+  </ul>
+  <button id="clearAllBtn" style="display:none;">Clear All Bookmarks</button>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCsdv2DcDa_u-kNBAXuq3TXp9nfdLy-chs",
+      authDomain: "margadarshi-85118.firebaseapp.com",
+      databaseURL: "https://margadarshi-85118-default-rtdb.firebaseio.com",
+      projectId: "margadarshi-85118",
+      storageBucket: "margadarshi-85118.firebasestorage.app",
+      messagingSenderId: "868205365403",
+      appId: "1:868205365403:web:2f2abcc026c0a88968de3e"
+    };
+
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+      try { firebase.initializeApp(firebaseConfig); } 
+      catch (e) { console.error("Firebase init failed:", e); }
+    }
+
+    const auth = firebase.auth();
+    const FLASK_BASE_URL = "http://127.0.0.1:5000";
+    const bookmarkList = document.getElementById('bookmarkList');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+
+    function formatTimestamp(isoString) {
+      if (!isoString) return 'N/A';
+      try {
+        const date = new Date(isoString);
+        return date.toLocaleString('en-IN', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      } catch { return 'N/A'; }
+    }
+
+    async function deleteBookmark(userId, bookmarkId) {
+      if (!confirm('Delete this bookmark?')) return;
+      try {
+        const response = await fetch(`${FLASK_BASE_URL}/deleteBookmark/${userId}/${bookmarkId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to delete on server.');
+        await renderBookmarks(userId);
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    async function copyTextToClipboard(text, btn) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = 'var(--success)';
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.style.background = 'var(--primary)';
+        }, 1400);
+      } catch {
+        alert('Copy failed — try manually.');
+      }
+    }
+
+    async function renderBookmarks(userId) {
+      bookmarkList.innerHTML = '<li class="loading-message">Fetching your saved notes...</li>';
+      clearAllBtn.style.display = 'none';
+
+      if (!userId) {
+        bookmarkList.innerHTML = '<li class="empty-message">Please log in to view your bookmarks.</li>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${FLASK_BASE_URL}/getBookmarks/${userId}`);
+        if (!response.ok) throw new Error(`Server failed: ${response.statusText}`);
+        const notes = await response.json();
+
+        bookmarkList.innerHTML = '';
+
+        if (!notes.length) {
+          bookmarkList.innerHTML = '<li class="empty-message">No bookmarks yet. Bookmark AI replies to see them here!</li>';
+          return;
+        }
+
+        clearAllBtn.style.display = 'block';
+
+        notes.forEach((note) => {
+          if (!note.id || !note.text) return;
+          const li = document.createElement('li');
+
+          const textDiv = document.createElement('div');
+          textDiv.className = 'bookmark-text';
+          textDiv.innerHTML = note.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+          li.appendChild(textDiv);
+
+          const expandBtn = document.createElement('button');
+          expandBtn.className = 'expand-btn';
+          expandBtn.textContent = '▼ Show more';
+          expandBtn.addEventListener('click', () => {
+            const expanded = textDiv.classList.toggle('expanded');
+            expandBtn.textContent = expanded ? '▲ Show less' : '▼ Show more';
+          });
+          li.appendChild(expandBtn);
+
+          const metaDiv = document.createElement('div');
+          metaDiv.className = 'bookmark-meta';
+          const time = document.createElement('time');
+          time.textContent = `🕒 Saved: ${formatTimestamp(note.timestamp)}`;
+          metaDiv.appendChild(time);
+          textDiv.appendChild(metaDiv);
+
+          // 📋 Copy button
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'action-btn copy-btn';
+          copyBtn.textContent = 'Copy';
+          copyBtn.addEventListener('click', () => copyTextToClipboard(note.text, copyBtn));
+          li.appendChild(copyBtn);
+
+          // 🗑️ Delete button
+          const delBtn = document.createElement('button');
+          delBtn.className = 'action-btn delete-btn';
+          delBtn.textContent = 'Delete';
+          delBtn.addEventListener('click', () => deleteBookmark(userId, note.id));
+          li.appendChild(delBtn);
+
+          bookmarkList.appendChild(li);
+        });
+      } catch (error) {
+        console.error("Error loading bookmarks:", error);
+        bookmarkList.innerHTML = `<li class="empty-message" style="color:var(--accent);">⚠️ Error loading bookmarks.</li>`;
+      }
+    }
+
+    clearAllBtn.addEventListener('click', async () => {
+      if (!auth.currentUser) {
+        alert("Please log in.");
+        return;
+      }
+      if (confirm('Clear ALL bookmarks? This cannot be undone.')) {
+        try {
+          const response = await fetch(`${FLASK_BASE_URL}/clearAllBookmarks/${auth.currentUser.uid}`, { method: 'DELETE' });
+          if (!response.ok) throw new Error('Failed to clear bookmarks.');
+          await renderBookmarks(auth.currentUser.uid);
+          alert('All bookmarks cleared.');
+        } catch (error) {
+          console.error("Clear error:", error);
+          alert(`Error: ${error.message}`);
+        }
+      }
+    });
+
+    auth.onAuthStateChanged(user => {
+      renderBookmarks(user ? user.uid : null);
+    });
+  </script>
+</body>
+</html>

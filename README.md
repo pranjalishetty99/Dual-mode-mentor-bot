@@ -61,4 +61,7 @@ http://127.0.0.1:5000/index.html
 
 ## Developed By
 
-Pranjali Shetty and Team
+- Deepthi Lakshmi K
+- Lekha S
+- Prajna M U
+- Pranjali  
